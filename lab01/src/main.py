@@ -99,13 +99,12 @@ def format(number):
 def task_1():
     x_start = 0
     x_end = 0.93
-    x_end_minus = 0
     h = 1e-6
 
-    n = math.ceil(abs(x_end - x_start) / h) + 1  # число итераций ~ 4000
-    output_step = int(n / 200)  # выводим только 200 значений в таблице
+    n = math.ceil(abs(x_end - x_start) / h) + 1
+    output_step = int(n / 200)
 
-    answer_euler = euler(n, h, 0, 0.5, f_1)
+    answer_euler = euler(n, h, 0, 1, f_1)
     print(
         "                                               Задание 1: таблица                                        ")
     print(
@@ -120,7 +119,7 @@ def task_1():
         "---------------------------------------------------------------------------------------------------------")
 
     for i in range(0, n, output_step):
-        print("|{:^9.2f}|{:^14s}|{:^15.2f}|{:^15.2f}|{:^15.2f}|{:^15.2f}|{:^15.2f}|".format(x_start,
+        print("|{:^9.2f}|{:^14s}|{:^15.5f}|{:^15.5f}|{:^15.5f}|{:^15.5f}|{:^15.5f}|".format(x_start,
             format(answer_euler[i]),
             analytical_solution_1(x_start),
             picar_approx_1_1(x_start),
@@ -131,8 +130,88 @@ def task_1():
         x_start += h * output_step
     print()
 
+def task_2():
+    x_start = 0
+    x_end = 0.93
+    h = 1e-6
+
+    n = math.ceil(abs(x_end - x_start) / h) + 1
+    output_step = int(n / 200)
+
+    answer_euler = euler(n, h, 0, 0.5, f_2)
+    print(
+        "                                               Задание 2: таблица                                        ")
+    print(
+        "---------------------------------------------------------------------------------------------------------")
+    print(
+        "|         |    Метод     |     Метод     |__________________________Метод Пикара_________________________|")
+    print(
+        "|    x    |    Эйлера    |     Аналит    |               |               |               |               |")
+    print(
+        "|         |    явный     |               |   1-е прибл.  |   2-е прибл.  |   3-е прибл.  |   4-е прибл.  |")
+    print(
+        "---------------------------------------------------------------------------------------------------------")
+
+    for i in range(0, n, output_step):
+        print("|{:^9.2f}|{:^14s}|{:^15.5f}|{:^15.5f}|{:^15.5f}|{:^15.5f}|{:^15.5f}|".format(x_start,
+            format(answer_euler[i]),
+            analytical_solution_2(x_start),
+            picar_approx_2_1(x_start),
+            picar_approx_2_2(x_start),
+            picar_approx_2_3(x_start),
+            picar_approx_2_4(x_start)
+        ))
+        x_start += h * output_step
+    print()
+
+def task_3():
+    x_start = 0
+    x_end = 0.93
+    h = 1e-6
+
+    n = math.ceil(abs(x_end - x_start) / h) + 1
+    output_step = int(n / 200)
+
+    answer_euler = euler(n, h, 0, 0, f_3)
+    print(
+        "                                               Задание 3: таблица                                        ")
+    print(
+        "---------------------------------------------------------------------------------------------------------")
+    print(
+        "|         |    Метод     |     Метод     |__________________________Метод Пикара_________________________|")
+    print(
+        "|    x    |    Эйлера    |     Аналит    |               |               |               |               |")
+    print(
+        "|         |    явный     |               |   1-е прибл.  |   2-е прибл.  |   3-е прибл.  |   4-е прибл.  |")
+    print(
+        "---------------------------------------------------------------------------------------------------------")
+
+    for i in range(0, n, output_step):
+        print("|{:^9.2f}|{:^14s}|{:^15.5s}|{:^15.5f}|{:^15.5f}|{:^15.5f}|{:^15.5f}|".format(x_start,
+            format(answer_euler[i]),
+            "----",
+            picar_approx_3_1(x_start),
+            picar_approx_3_2(x_start),
+            picar_approx_3_3(x_start),
+            picar_approx_3_4(x_start)
+        ))
+        x_start += h * output_step
+    print()
+
+
 def main():
-    task_1()
+    try:
+        task_num = int(input("Введите номер задания: "))
+        if task_num == 1:
+            task_1()
+        elif task_num == 2:
+            task_2()
+        elif task_num == 3:
+            task_3()
+        else:
+            raise Exception
+    except:
+        print("Зачем же вы такое вводите...")
 
 
 if __name__ == "__main__":
