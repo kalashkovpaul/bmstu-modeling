@@ -1,14 +1,10 @@
 import math
 
-
-MAX_X = 2.003
-STEP  = 1e-4
-
 def f_1(x, u):
 	return x + u**2
 
 def f_2(x, u):
-    return u**2 + 2*u*x
+    return u**3 + 2*u*x
 
 def f_3(x, u):
 	return x**2 + u**2
@@ -17,7 +13,7 @@ def analytical_solution_1(u):
     return 3*math.exp(u) - u**2 - 2*u - 2
 
 def analytical_solution_2(u):
-    return (u**2 + 1) / 2
+    return math.exp(u) - (u**2 + 1) / 2
 
 # f_3 has no analytical solution :(
 
@@ -79,7 +75,9 @@ def euler(n, h, x, y, function):
         try:
             y += h * function(x, y)
             answer.append(y)
+            # print(x, y)
             x += h
+
         except OverflowError:
             answer.append("Over")
 
@@ -102,7 +100,7 @@ def task_1():
     h = 1e-6
 
     n = math.ceil(abs(x_end - x_start) / h) + 1
-    output_step = int(n / 200)
+    output_step = int(n / 400)
 
     answer_euler = euler(n, h, 0, 1, f_1)
     print(
@@ -166,11 +164,11 @@ def task_2():
 
 def task_3():
     x_start = 0
-    x_end = 0.93
+    x_end = 2.5
     h = 1e-6
 
     n = math.ceil(abs(x_end - x_start) / h) + 1
-    output_step = int(n / 200)
+    output_step = int(n / 400)
 
     answer_euler = euler(n, h, 0, 0, f_3)
     print(
@@ -200,6 +198,11 @@ def task_3():
 
 
 def main():
+    # Примечание:
+    # Правильный ответ на вопрос 3 - 317 с хвостиком, это значение можно увидеть, поиграв
+    # с шагом в Эйлере
+    # Правильный ответ на вопрос 4 - в точке 2.004 с хвостиком, это тоже можно увидеть,
+    # сделав переменный шаг
     try:
         task_num = int(input("Введите номер задания: "))
         if task_num == 1:
@@ -212,6 +215,7 @@ def main():
             raise Exception
     except:
         print("Зачем же вы такое вводите...")
+
 
 
 if __name__ == "__main__":
