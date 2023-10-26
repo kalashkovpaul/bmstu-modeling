@@ -1,0 +1,122 @@
+ Целью данной работы является разработка программы с графическим интерфейсом для определения среднего относительного времени пребывания системы в предельном стационарном состоянии, а также вероятности нахоождения системы в указанных состояниях и время до стабилизации вероятностей состояний. Интенсивности переходов из состояния в состояние задаютсся в виде матрицы (предусмотреть определение размера матрицы).
+
+\section*{Марковский процесс}
+	
+Случайный процесс называется марковским случайным прооцессом, если для каждомго момента времени вероятность люого состояния системы в будущем зависит только от состояния системы в настоящем и не завписит от того, когда и каким образом система пришла в это состояние.
+
+Для марковского случайного процесса составляют уравнения Колмогорова, следуя следующему правилу: в левой части каждого уравнения находится производная функции, отражающей вероятность нахождения системы в $i$-ом состоянии, в правой части находится столько членов, сколько трелок связано с данным состоянием в направленном графе состояний, причём если стрелка выходит из состояния, член имеет знак минус, если в состояние, знак плюс. 
+
+Таким образом, в правой части находится сумма произведений вероятностей всех состояний, переводящих систему в данное состояние, на интенсивности соответствующих переходов, минус суммарная интенсивность всех переходов, выводящих систему из данного состояния, умноженная на вероятность данного состояния. Уравнение Колмогорова для состояния с номером $i$ будет иметь следующий вид:
+
+\begin{equation}
+	p^{'}_{i}(t) = \sum_{j=1}^{n}\lambda_{ji}p_{j}(t) - p_{i}(t)\cdot \sum_{j=1}^{n}\lambda_{ij},
+\end{equation}
+
+где:
+
+ $n$ --- число состояний рассматриваемой ситемы;
+
+$\lambda_{ij}$ --- интенсивность перехода системы из $i$-го состояния в $j$-ое.
+
+
+\subsection*{Определение предельных вероятностей}
+Предельная вероятность состояния --- среднее относительное время нахождения системы в данном состоянии.
+Для определения предельных вероятностей необходимо решить систему уравнений Колмогорова. 
+Поскольку по условию задачи рассматриваемый марковский процесс является стационарным, производные вероятностей заменяются нулями. 
+При этом одно из уравнений в системе необходимо заменить уравнением нормировки: $\sum_{i = 1}^{n}p_{i}(t) = 1$, где $n$ --- количество состояний системы.
+
+\subsection*{Время стабилизации вероятностей состояний}
+
+Время стабилизации вероятности нахождения системы в состоянии определяется следующим образом: определяются верятности нахождения системы в состоянии $i$ в момент времени $t$ и в момент времени $t + \varDelta t$ с увеличением значения t до тех пор, пока не будет выполняться следующее условие:
+
+\begin{equation*}
+ | p_{i}(t) - p_{i}(t + \varDelta t))| < \varepsilon,
+\end{equation*}
+
+где $\varepsilon$ --- заданная точность.
+
+\section*{Результаты работы}
+
+\subsection*{Детали реализации}
+
+В листинге \ref{lst:kolmogorov} представлена реализация функции получения коэффициентов уравнений Колмогорова, в листинге \ref{lst:probs} реализация функции получения предельных верятностей, а в листингах \ref{lst:stab_time-1} и \ref{lst:stab_time-2} реализация функции получения среднего относительного времени.
+\clearpage
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[label=lst:kolmogorov,caption=Реализация функции получения коэффициентов уравнений Колмогорова]
+def __get_kolmogorov_koeffs(self):
+    factors = []
+
+    for state in range(self.number_states):
+        factors.append([0] * self.number_states)
+        for i in range(self.number_states):
+            if i != state:
+                factors[state][i] = self.intensity_matrix[i][state]
+                factors[state][state] -= self.intensity_matrix[state][i]
+
+    return factors
+\end{lstlisting}
+\end{center}
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[label=lst:probs,caption=Реализация функции получения предельных вероятностей]
+def get_limit_probabilities(self):
+    coeffs = self.__get_kolmogorov_koeffs()
+    coeffs[0] = [1] * self.number_states
+    free_numbers = [0] * self.number_states
+    free_numbers[0] = 1
+
+    return linalg.solve(coeffs, free_numbers)
+\end{lstlisting}
+\end{center}
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[label=lst:stab_time-1,caption=Реализация функции получения среднего относительного времени (часть 1)]
+def get_time_to_stable(self, probs):
+    time = arange(0, max_time, time_delta)
+
+    start_probabilities = [0] * self.number_states
+    start_probabilities[0] = 1
+
+    coeffs = self.__get_kolmogorov_koeffs()
+
+    integrated_probabilities = transpose(odeint(self.__get_derivatives,
+            start_probabilities,
+            time, args=(coeffs)))
+\end{lstlisting}
+\end{center}
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[label=lst:stab_time-2,caption=Реализация функции получения среднего относительного времени (часть 2)]
+	stabilization_time = []
+
+    for state in range(self.number_states):
+        probabilities = integrated_probabilities[state]
+
+        for i, probability in enumerate(probabilities):
+            if abs(probs[state] - probability) < eps:
+                stabilization_time.append(time[i])
+                break
+
+            if i == len(probabilities) - 1:
+                stabilization_time.append(0)
+
+    return stabilization_time
+\end{lstlisting}
+\end{center}
+
+\subsection*{Примеры работы}
+
+На рисунках \ref{img:example-1} и \ref{img:example-2} представлены примеры работы разработанной программы для систем из трёх и пяти состояний.
+
+\imgHeight{90mm}{example-1}{Пример работы программы для системы из трёх состояний}
+
+\imgHeight{90mm}{example-2}{Пример работы программы для системы из пяти состояний}
+\section*{Вывод}
+
+В ходе выполнения лабораторной работы была реализована программма с графическим интерфейсом для определения среднего относительного времени пребывания системы в предельном стационарном состоянии, а также вероятности нахоождения системы в указанных состояниях.
+
