@@ -20,7 +20,7 @@ def get_koeff(numbers):
 
 def get_entropy(numbers):
     count = len(numbers)
-    if count == 0:
+    if count == 0 or count == 1:
         return 0
 
     hist = dict()
