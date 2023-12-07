@@ -1,0 +1,212 @@
+
+Целью данной работы является разработка программы с графическим интерфейсом для моделирования процесса обработки 300 запросов клиентов информационным центром и определения вероятности отказа клиенту в обслуживании. Информационный центр работает следующим образом:
+
+\begin{enumerate}
+	\item Клиенты приходят через интервал времени, равный 10 $\pm$ 2 мин.
+	\item Если все три имеющихся оператора заняты, клиенту отказывают в обслуживании. Операторы имеют разную производительность и могут обеспечивать обслуживание среднего запроса пользователя за 20 $\pm$ 5 мин., 40 $\pm$ 10 мин. и 40 $\pm$ 20 мин. соответственно. Клиенты стремятся занять свободного оператора с максимальной производительностью.
+	\item Полученные запросы сдаются в приемный накопитель, из которого они выбираются для обработки. На первый компьютер выбираются запросы от первого и второго операторов, на второй компьютер --- от третьего оператора. Время обработки на первом и втором компьютерах равны соответственно 15 мин. и 30 мин.
+\end{enumerate}
+
+В процессе взаимодействия клиентов и информационного центра предусмотреть: режим нормального обслуживания, когда клиент выбирает одного из свободных операторов c максимальной производительностью, и режим отказа.
+ 
+\section*{Моделирование функционирования системы}
+
+При моделировании функционирования системы эндогенными переменными являются:
+
+\begin{itemize}
+	\item время обслуживания клиента $i$-ым оператором, где $i = \overline{1, 3}$;	
+	\item время обработки запроса на $j$-ом компьютере, где $j = \overline{1, 2}$.
+\end{itemize}
+
+\clearpage
+
+Экзогенными переменными являются:
+
+\begin{itemize}
+	\item число обслуженных клиентов $n_{0}$;
+	\item число клиентов, получивших отказ, $n_{1}$.
+\end{itemize}
+
+Уравнение модели имеет следующий вид:
+
+\begin{equation}
+    P_{\text{отказа}} = \frac{n_{1}}{n_{0} + n_{1}}
+\end{equation}
+
+\section*{Cхемы модели}
+
+На рисунке \ref{img:struct} показана структурная схема модели.
+
+\imgHeight{50mm}{struct}{Структурная схема модели информационного центра}
+
+На рисунке \ref{img:system} представлена схема модели в терминах СМО.
+
+\imgHeight{60mm}{system}{Схема модели в терминах СМО}
+
+\section*{Результаты работы}
+
+\subsection*{Детали реализации}
+
+В листинге \ref{lst:client-generator} представлена реализация работы генератора клиентов, а в листингах \ref{lst:operator-1}--\ref{lst:operator-2} --- реализация работы оператора.
+Реализации работы компьютера и самого информационного центра представлены в листингах \ref{lst:computer} и \ref{lst:center} соотвественно.
+\clearpage
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[label=lst:client-generator,caption=Реализация работы генератора клиентов]
+class ClientGenerator:
+    def __init__(self, time_value, time_limit, operators, number):
+        self.generator = TimeGenerator(time_value - time_limit, time_value + time_limit)
+        self.operators = sorted(operators, key= lambda operator: operator.max_time)
+        self.time_next = 0
+        self.number = number
+
+    def generate_client(self, time_prev):
+        self.time_next = time_prev + self.generator.get_interval()
+
+    def choose_operator(self):
+        for operator in self.operators:
+            if operator.is_free():
+                return operator
+        return None
+\end{lstlisting}
+\end{center}
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[label=lst:operator-1,caption=Реализация работы оператора (часть 1)]
+class Operator:
+    def __init__(self, time_value, time_limit, computer):
+        self.time_generator = TimeGenerator(time_value - time_limit, time_value + time_limit)
+        self.computer = computer
+        self.max_time = time_value + time_limit
+        self.time_next = 0
+        self.free = True
+
+    def generate_time(self, prev_time):
+        self.time_next = prev_time + self.time_generator.get_interval()
+
+    def is_free(self):
+        return self.free
+
+    def set_free(self):
+        self.free = True
+\end{lstlisting}
+\end{center}
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[label=lst:operator-2,caption=Реализация работы оператора (часть 2)]
+    def set_busy(self):
+        self.free = False
+
+    def get_computer(self):
+        return self.computer
+\end{lstlisting}
+\end{center}
+
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[label=lst:computer,caption=Реализация работы компьютера]
+class Computer:
+    def __init__(self, time_value, time_limit):
+        self.time_generator = TimeGenerator(time_value - time_limit, time_value + time_limit)
+        self.queue = []
+        self.time_next = 0
+        self.free = True
+
+    def generate_time(self, prev_time):
+        self.time_next = prev_time + self.time_generator.get_interval()
+
+    def is_free(self):
+        return self.free
+
+    def set_free(self):
+        self.free = True
+
+    def set_busy(self):
+        self.free = False
+
+    def is_empty(self):
+        if self.queue:
+            return False
+        return True
+
+    def add_request(self):
+        self.queue.append(request)
+
+    def pop_request(self):
+        self.queue.pop(0)
+\end{lstlisting}
+\end{center}
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[label=lst:center-1,caption=Реализация работы информационного центра (часть 1)]
+class Center:
+    def __init__(self, client_generator):
+        self.client_generator = client_generator
+
+    def service_clients(self):
+        failures = 0
+        self.client_generator.generate_client(0)
+        generated_clients = 1
+        events = [Event(self.client_generator, self.client_generator.time_next)]
+
+        while generated_clients < self.client_generator.number:
+            events = sort_events(events)
+            event = events.pop(0)
+
+            if isinstance(event.creator, ClientGenerator):
+                operator = self.client_generator.choose_operator()
+                if operator is None:
+                    failures += 1
+                else:
+                    operator.set_busy()
+                    operator.generate_time(event.time)
+                    events.append(Event(operator, operator.time_next))
+                self.client_generator.generate_client(event.time)
+                generated_clients += 1
+                events.append(Event(self.client_generator, self.client_generator.time_next))
+
+            elif isinstance(event.creator, Operator):
+                operator = event.creator
+                operator.set_free()
+                computer = operator.get_computer()
+                computer.add_request()
+                if computer.is_free() and not computer.is_empty():
+                    computer.pop_request()
+                    computer.set_busy()
+                    computer.generate_time(event.time)
+                    events.append(Event(computer, computer.time_next))
+\end{lstlisting}
+\end{center}
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[label=lst:center-2,caption=Реализация работы информационного центра (часть 2)]
+            elif isinstance(event.creator, Computer):
+                computer = event.creator
+                computer.set_free()
+                if not computer.is_empty():
+                    computer.pop_request()
+                    computer.set_busy()
+                    computer.generate_time(event.time)
+                    events.append(Event(computer, computer.time_next))
+
+        return failures
+
+\end{lstlisting}
+\end{center}
+
+\subsection*{Примеры работы}
+
+На рисунке \ref{img:example}  представлен пример работы разработанной программы для описанного информационного центра с обработкой 300 заявок.
+
+\imgHeight{100mm}{example}{Пример работы программы, обработка 300 заявок}
+
+\section*{Вывод}
+
+В ходе выполнения лабораторной работы была реализована программа с графическим интерфейсом для моделирования процесса обработки 300 запросов клиентов информационным центром и определения вероятности отказа клиенту в обслуживании. Вероятность отказа равна примерно  0.2.
+
