@@ -1,0 +1,140 @@
+
+Целью данной работы является разработка программы на языке моделирования GPSS для моделирования процесса обработки 300 запросов клиентов информационным центром и определения вероятности отказа клиенту в обслуживании. Информационный центр работает следующим образом:
+
+\begin{enumerate}
+	\item Клиенты приходят через интервал времени, равный 10 $\pm$ 2 мин.
+	\item Если все три имеющихся оператора заняты, клиенту отказывают в обслуживании. Операторы имеют разную производительность и могут обеспечивать обслуживание среднего запроса пользователя за 20 $\pm$ 5 мин., 40 $\pm$ 10 мин. и 40 $\pm$ 20 мин. соответственно. Клиенты стремятся занять свободного оператора с максимальной производительностью.
+	\item Полученные запросы сдаются в приемный накопитель, из которого они выбираются для обработки. На первый компьютер выбираются запросы от первого и второго операторов, на второй компьютер --- от третьего оператора. Время обработки на первом и втором компьютерах равны соответственно 15 мин. и 30 мин.
+\end{enumerate}
+
+В процессе взаимодействия клиентов и информационного центра предусмотреть: режим нормального обслуживания, когда клиент выбирает одного из свободных операторов c максимальной производительностью, и режим отказа.
+ 
+\section*{Моделирование функционирования системы}
+
+При моделировании функционирования системы эндогенными переменными являются:
+
+\begin{itemize}
+	\item время обслуживания клиента $i$-ым оператором, где $i = \overline{1, 3}$;	
+	\item время обработки запроса на $j$-ом компьютере, где $j = \overline{1, 2}$.
+\end{itemize}
+
+\clearpage
+
+Экзогенными переменными являются:
+
+\begin{itemize}
+	\item число обслуженных клиентов $n_{0}$;
+	\item число клиентов, получивших отказ, $n_{1}$.
+\end{itemize}
+
+Уравнение модели имеет следующий вид:
+
+\begin{equation}
+    P_{\text{отказа}} = \frac{n_{1}}{n_{0} + n_{1}}
+\end{equation}
+
+\section*{Cхемы модели}
+
+На рисунке \ref{img:struct} показана структурная схема модели.
+
+\imgHeight{50mm}{struct}{Структурная схема модели информационного центра}
+
+На рисунке \ref{img:system} представлена схема модели в терминах СМО.
+
+\imgHeight{60mm}{system}{Схема модели в терминах СМО}
+
+\section*{Результаты работы}
+
+\subsection*{Детали реализации}
+
+В листингах \ref{lst:gpss-1}--\ref{lst:gpss-2} приведена реализация программы моделирования информационного центра на языке GPSS.
+\clearpage
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[label=lst:gpss-1,caption=Реализация программмы на языке GPSS, часть 1]
+client_medium FVARIABLE 10
+delta_client FVARIABLE 2
+operator_1_medium FVARIABLE 20
+operator_1_delta FVARIABLE 5
+operator_2_medium FVARIABLE 40
+operator_2_delta FVARIABLE 10
+operator_3_medium FVARIABLE 40
+operator_3_delta FVARIABLE 20
+
+computer_1_medium FVARIABLE 8
+computer_1_delta FVARIABLE 7
+computer_2_medium FVARIABLE 16
+computer_2_delta FVARIABLE 14
+
+GENERATE (v$client_medium),(v$delta_client)
+
+TEST E f$operator_1,0,test_operator_2
+SPLIT 1,processed
+SEIZE operator_1
+ADVANCE (v$operator_1_medium),(v$operator_1_delta)
+RELEASE operator_1
+TRANSFER ,to_queue_of_computer_1
+
+test_operator_2 TEST E f$operator_2,0,test_operator_3
+SPLIT 1,processed
+SEIZE operator_2
+ADVANCE (v$operator_2_medium),(v$operator_2_delta)
+RELEASE operator_2
+TRANSFER ,to_queue_of_computer_1
+
+test_operator_3 TEST E f$operator_3,0,denied
+SPLIT 1,processed
+SEIZE operator_3
+ADVANCE (v$operator_3_medium),(v$operator_3_delta)
+RELEASE operator_3
+TRANSFER ,to_queue_of_computer_2
+\end{lstlisting}
+\end{center}
+
+\clearpage
+
+\begin{center}
+\captionsetup{justification=raggedright,singlelinecheck=off}
+\begin{lstlisting}[label=lst:gpss-2,caption=Реализация программмы на языке GPSS, часть 2]
+to_queue_of_computer_1 QUEUE computer_1_queue
+SEIZE computer_1
+DEPART computer_1_queue
+ADVANCE (v$computer_1_medium),(v$computer_1_delta)
+RELEASE computer_1
+TRANSFER ,delete
+
+to_queue_of_computer_2 QUEUE computer_2_queue
+SEIZE computer_2
+DEPART computer_2_queue
+ADVANCE (v$computer_2_medium),(v$computer_2_delta)
+RELEASE computer_2
+TRANSFER ,delete
+
+processed TRANSFER ,calculate_result
+calculate_result SAVEVALUE PERCENT,(n$denied/(n$denied+n$processed))
+TERMINATE 1
+denied TERMINATE 1
+delete TERMINATE 0
+
+
+START 300
+\end{lstlisting}
+\end{center}
+
+\subsection*{Примеры работы}
+
+На рисунках \ref{img:example-1}--\ref{img:example-2} представлен пример работы разработанной программы для описанного информационного центра с обработкой 300 заявок. Вычисленная вероятность отказа равна 0.227.
+
+\clearpage
+
+\imgHeight{180mm}{example-1}{Результат работы программы, часть 1}
+
+\clearpage
+
+\imgHeight{180mm}{example-2}{Результат работы программы, часть 2}
+
+\section*{Вывод}
+
+В ходе выполнения лабораторной работы была реализована программа  на языке моделирования GPSS для моделирования процесса обработки 300 запросов клиентов информационным центром и определения вероятности отказа клиенту в обслуживании. Вероятность отказа равна  0.227.
+

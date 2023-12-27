@@ -1,0 +1,20 @@
+lambda FVARIABLE 5/100
+k FVARIABLE 3
+a FVARIABLE 1
+b FVARIABLE 10
+ret FVARIABLE 0
+time FVARIABLE 1000
+
+GENERATE ((v$a+v$b)/2),((v$b-v$a)/2)
+entered_queue QUEUE que
+SEIZE server
+DEPART que
+ADVANCE (GAMMA(1,0,v$lambda,v$k))
+RELEASE server
+TRANSFER (v$ret),ex,entered_queue
+ex TERMINATE 0
+
+
+GENERATE v$time
+TERMINATE 1
+START 1

@@ -68,6 +68,8 @@ class System:
 
         events = [[self.generator.get_time_interval(), generation]]
 
+
+        # while len(events):
         while processed_amounts < self.messages_amount:
             event = events.pop(0)
 

@@ -1,0 +1,59 @@
+client_medium FVARIABLE 10
+delta_client FVARIABLE 2
+operator_1_medium FVARIABLE 20
+operator_1_delta FVARIABLE 5
+operator_2_medium FVARIABLE 40
+operator_2_delta FVARIABLE 10
+operator_3_medium FVARIABLE 40
+operator_3_delta FVARIABLE 20
+
+computer_1_medium FVARIABLE 8
+computer_1_delta FVARIABLE 7
+computer_2_medium FVARIABLE 16
+computer_2_delta FVARIABLE 14
+
+GENERATE (v$client_medium),(v$delta_client)
+
+TEST E f$operator_1,0,test_operator_2
+SPLIT 1,processed
+SEIZE operator_1
+ADVANCE (v$operator_1_medium),(v$operator_1_delta)
+RELEASE operator_1
+TRANSFER ,to_queue_of_computer_1
+
+test_operator_2 TEST E f$operator_2,0,test_operator_3
+SPLIT 1,processed
+SEIZE operator_2
+ADVANCE (v$operator_2_medium),(v$operator_2_delta)
+RELEASE operator_2
+TRANSFER ,to_queue_of_computer_1
+
+test_operator_3 TEST E f$operator_3,0,denied
+SPLIT 1,processed
+SEIZE operator_3
+ADVANCE (v$operator_3_medium),(v$operator_3_delta)
+RELEASE operator_3
+TRANSFER ,to_queue_of_computer_2
+
+to_queue_of_computer_1 QUEUE computer_1_queue
+SEIZE computer_1
+DEPART computer_1_queue
+ADVANCE (v$computer_1_medium),(v$computer_1_delta)
+RELEASE computer_1
+TRANSFER ,delete
+
+to_queue_of_computer_2 QUEUE computer_2_queue
+SEIZE computer_2
+DEPART computer_2_queue
+ADVANCE (v$computer_2_medium),(v$computer_2_delta)
+RELEASE computer_2
+TRANSFER ,delete
+
+processed TRANSFER ,calculate_result
+calculate_result SAVEVALUE PERCENT,(n$denied/(n$denied+n$processed))
+TERMINATE 1
+denied TERMINATE 1
+delete TERMINATE 0
+
+
+START 300
